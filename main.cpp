@@ -1,12 +1,3 @@
-// Dear ImGui: standalone example application for Win32 + OpenGL 3
-
-// Learn about Dear ImGui:
-// - FAQ                  https://dearimgui.com/faq
-// - Getting Started      https://dearimgui.com/getting-started
-// - Documentation        https://dearimgui.com/docs (same as your local docs/ folder).
-// - Introduction, links and more at the top of imgui.cpp
-
-// This is provided for completeness, however it is strongly recommended you use OpenGL with SDL or GLFW.
 
 #include "imgui.h"
 #include "imgui_impl_opengl3.h"
@@ -17,6 +8,9 @@
 #include <windows.h>
 #include <GL/GL.h>
 #include <tchar.h>
+
+#include "bmpfunc.h"
+#include <cstdint>
 
 // Data stored per platform window
 struct WGL_WindowData { HDC hDC; };
@@ -72,10 +66,25 @@ int main(int, char**)
     ImGui_ImplOpenGL3_Init();
 
     
-    bool show_another_window = false;
-    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    bool file_is_open = false;
+    bool error_file_open = false;
+
+    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.00f, 1.00f); // back ground color
+
+    static char file[128] = "./test.bmp";
+    static char file_rle[128] = "./test.rle";
+
+    BITMAPIMAGE image;
+    int code_error;
 
     bool done = false;
+
+    int code_err;
+
+    float wrap_width = 0.1f;
+
+    uint8_t* pres_image; 
+
     while (!done)
     {
 
@@ -100,36 +109,61 @@ int main(int, char**)
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
 
-        // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
         {
             static float f = 0.0f;
             static int counter = 0;
 
-            ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+            ImGui::Begin("File Dialog");                        
+            ImGui::InputText("File path", file, 128);
 
-            ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-            ImGui::Checkbox("close", &done);      // Edit bools storing our window open/close state
-            ImGui::Checkbox("Another Window", &show_another_window);
+            if (ImGui::Button("Open File")){
+                code_error = load_file(file, &image);
+                if(code_error != 0)
+                    error_file_open = true;
+                else{
+                    file_is_open = true;
+                    pres_image =  bag_convert(image.bmPixels);
+                }
+                    
+            }
+                
 
-            ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-            ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
-
-            if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-                counter++;
-            ImGui::SameLine();
-            ImGui::Text("counter = %d", counter);
-
+            if (ImGui::Button("Close & Exit"))
+                done = true;
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
             ImGui::End();
         }
 
-        // 3. Show another simple window.
-        if (show_another_window)
+        if(error_file_open){
+            ImGui::Begin("[WARNIG]");  
+            ImGui::Text("%s", get_err_file(code_error));
+            if (ImGui::Button("Close Window"))
+                error_file_open = false;
+            ImGui::End();
+        }
+
+        if (file_is_open)
         {
-            ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
-            ImGui::Text("Hello from another window!");
-            if (ImGui::Button("Close Me"))
-                show_another_window = false;
+            ImGui::Begin("File Info");  
+            ImGui::Text("Information in file:");
+            ImGui::Text("GENERAL:");
+            ImGui::Text("Type: %x;", image.bmFile.bfType);
+            ImGui::Text("Size: %d Bytes;", image.bmFile.bfSize);
+
+            ImGui::Text("Err: %d Bytes;", code_err);
+            
+            ImGui::Text("Start Data Position: %d Byte;", image.bmFile.bfOffBits);
+            ImGui::Text("INFO:");
+            ImGui::Text("Size info block: %d Bytes;", image.bmInfo.biSize);
+            ImGui::Text("Width: %d Pixels;", image.bmInfo.biWidth);
+            ImGui::Text("Height: %d Pixels;", image.bmInfo.biHeight);
+            ImGui::Text("Color Block Size: %d Bits;", image.bmInfo.biBitCount);
+            ImGui::InputText("File save to rle", file_rle, 128);
+            if (ImGui::Button("Save Rle"))
+                save_toRLE(file_rle, image);
+            ImGui::SliderFloat("Wrap width", &wrap_width, 0.1, 10, "%.0f");
+            if (ImGui::Button("Close Window"))
+                file_is_open = false;
             ImGui::End();
         }
 
@@ -138,7 +172,13 @@ int main(int, char**)
         glViewport(0, 0, g_Width, g_Height);
         glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT);
-
+        if(file_is_open){
+            glPixelZoom(wrap_width, wrap_width);
+            glDrawPixels(image.bmInfo.biWidth, image.bmInfo.biHeight, GL_BGR_EXT, GL_UNSIGNED_BYTE, pres_image);
+            code_err = glGetError();
+        }
+        
+/*
         glBegin(GL_QUADS);              // Each set of 4 vertices form a quad
         glColor3f(1.0f, 0.0f, 0.0f); // Red
         glVertex2f(-0.5f, -0.5f);    // x, y
@@ -146,7 +186,8 @@ int main(int, char**)
         glVertex2f( 0.5f,  0.5f);
         glVertex2f(-0.5f,  0.5f);
         glEnd();
-        
+        */
+
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         // Present

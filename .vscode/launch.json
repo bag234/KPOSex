@@ -1,21 +1,49 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
-    "configurations": [ 
+    "configurations": [
+        
         {
-            "name"           : "Debug Config",
-            "type"           : "cppdbg",
-            "request"        : "launch",
-            "program"        : "${workspaceRoot}\\${fileBasenameNoExtension}.exe",
-            "args"           : [],
-            "preLaunchTask"  : "imgui-build",
-            "stopAtEntry"    : true,
-            "cwd"            : "${workspaceRoot}",
-            "environment"    : [],
+            "name": "Debug IMGUI",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceRoot}\\${fileBasenameNoExtension}.exe",
+            "args": [],
+            "preLaunchTask": "imgui-build",
+            "stopAtEntry": true,
+            "cwd": "${workspaceRoot}",
+            "environment": [],
             "externalConsole": false,
-            "MIMode"         : "gdb",
+            "MIMode": "gdb"
+        },
+        {
+            "name": "Default Build",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceRoot}\\target\\${fileBasenameNoExtension}.exe",
+            "args": [],
+            "preLaunchTask": "gcc-build",
+            "stopAtEntry": true,
+            "cwd": "${workspaceRoot}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb"
+        },
+        {
+            "name": "Debug Config",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceRoot}\\${fileBasenameNoExtension}.exe",
+            "args": [],
+            "preLaunchTask": "imgui-build",
+            "stopAtEntry": true,
+            "cwd": "${workspaceRoot}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "configSource": "workspaceFolder",
+            "detail": "preLaunchTask: imgui-build",
+            "existing": true,
+            "isDefault": true
         }
     ]
 }
